@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  annotations:
+    #    kubernetes.io/ingress.global-static-ip-name: "cloud-ingress-static-ip" # Used for nginx local testing
+    traefik.ingress.kubernetes.io/router.entrypoints: web # running Traefik on AWS
+spec:
+  ingressClassName: traefik # nginx
+  rules:
+    - http:
+        paths:
+          - path: /api/delivery/
+            pathType: Prefix
+            backend:
+              service:
+                name: delivery-manager-service
+                port:
+                  number: 80
+          - path: /api/order/
+            pathType: Prefix
+            backend:
+              service:
+                name: order-manager-service
+                port:
+                  number: 80
+          - path: /api/sales/
+            pathType: Prefix
+            backend:
+              service:
+                name: sales-manager-service
+                port:
+                  number: 80
+          - path: /api/schedule/
+            pathType: Prefix
+            backend:
+              service:
+                name: schedule-manager-service
+                port:
+                  number: 80
+          - path: /api/shelf/
+            pathType: Prefix
+            backend:
+              service:
+                name: shelf-manager-service
+                port:
+                  number: 80
+          - path: /api/stock/
+            pathType: Prefix
+            backend:
+              service:
+                name: stock-manager-service
+                port:
+                  number: 80

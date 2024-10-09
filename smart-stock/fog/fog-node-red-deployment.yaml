@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-red-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fog-node-red
+  template:
+    metadata:
+      labels:
+        app: fog-node-red
+    spec:
+      containers:
+        - name: fog-node-red
+          image: fog-node-red
+          imagePullPolicy: Never
+          env:
+            - name: MONGO_PROTOCOL
+              value: "mongodb"
+            - name: MONGO_URI
+              value: "mongodb-service.default.svc.cluster.local"
+            - name: MONGO_PORT
+              value: "27017"
+          ports:
+            - containerPort: 1880
+            - containerPort: 5683
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 1880
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fog-node-red-autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fog-node-red-deployment
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 50

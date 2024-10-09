@@ -1,0 +1,888 @@
+[
+  {
+    "id": "aca3747d63338874",
+    "type": "tab",
+    "label": "Fog Node-RED",
+    "disabled": false,
+    "info": "",
+    "env": []
+  },
+  {
+    "id": "f01c3fa5c0fc2de2",
+    "type": "coap in",
+    "z": "aca3747d63338874",
+    "method": "GET",
+    "name": "/api/smart-trolley/add-item",
+    "server": "c6707cd9cca84ba5",
+    "url": "/api/smart-trolley/add-item",
+    "x": 450,
+    "y": 460,
+    "wires": [
+      [
+        "d1b02171c59ef2be"
+      ]
+    ]
+  },
+  {
+    "id": "d1b02171c59ef2be",
+    "type": "json",
+    "z": "aca3747d63338874",
+    "name": "",
+    "property": "payload",
+    "action": "",
+    "pretty": false,
+    "x": 650,
+    "y": 460,
+    "wires": [
+      [
+        "2b14167b6329c6a5"
+      ]
+    ]
+  },
+  {
+    "id": "365d60ec50b2aa58",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "add-item",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 960,
+    "y": 400,
+    "wires": []
+  },
+  {
+    "id": "a28a5c31db89c0b8",
+    "type": "coap in",
+    "z": "aca3747d63338874",
+    "method": "GET",
+    "name": "/api/smart-trolley/checkout",
+    "server": "c6707cd9cca84ba5",
+    "url": "/api/smart-trolley/checkout",
+    "x": 450,
+    "y": 660,
+    "wires": [
+      [
+        "1d7b16c8cebb92ec"
+      ]
+    ]
+  },
+  {
+    "id": "26c2154ec5d5ca14",
+    "type": "coap in",
+    "z": "aca3747d63338874",
+    "method": "GET",
+    "name": "/api/smart-trolley/register",
+    "server": "c6707cd9cca84ba5",
+    "url": "/api/smart-trolley/register",
+    "x": 450,
+    "y": 280,
+    "wires": [
+      [
+        "b5d57eb6816196b3"
+      ]
+    ]
+  },
+  {
+    "id": "52baa144b116dda2",
+    "type": "coap response",
+    "z": "aca3747d63338874",
+    "name": "205 No content",
+    "statusCode": "",
+    "contentFormat": "text/plain",
+    "x": 1740,
+    "y": 280,
+    "wires": []
+  },
+  {
+    "id": "f1ef58f2b82bd02d",
+    "type": "coap response",
+    "z": "aca3747d63338874",
+    "name": "205 No content",
+    "statusCode": "",
+    "contentFormat": "text/plain",
+    "x": 1960,
+    "y": 600,
+    "wires": []
+  },
+  {
+    "id": "05ac1421b6d8268a",
+    "type": "mongodb4",
+    "z": "aca3747d63338874",
+    "clientNode": "6fb7779d657c483b",
+    "mode": "collection",
+    "collection": "trolleyPublicKeys",
+    "operation": "insertOne",
+    "output": "toArray",
+    "maxTimeMS": "0",
+    "handleDocId": false,
+    "name": "insertOne",
+    "x": 1500,
+    "y": 280,
+    "wires": [
+      [
+        "52baa144b116dda2"
+      ]
+    ]
+  },
+  {
+    "id": "0daa8796e684cf82",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "setPublicKeyPayload",
+    "func": "msg.payload = [{trolleyId: msg.payload.trolleyId, publicKey: msg.payload.publicKey}]\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1260,
+    "y": 280,
+    "wires": [
+      [
+        "122654766cabe60c",
+        "05ac1421b6d8268a"
+      ]
+    ]
+  },
+  {
+    "id": "b5d57eb6816196b3",
+    "type": "json",
+    "z": "aca3747d63338874",
+    "name": "",
+    "property": "payload",
+    "action": "",
+    "pretty": false,
+    "x": 650,
+    "y": 280,
+    "wires": [
+      [
+        "31d4dafa083e2402"
+      ]
+    ]
+  },
+  {
+    "id": "1d7b16c8cebb92ec",
+    "type": "json",
+    "z": "aca3747d63338874",
+    "name": "",
+    "property": "payload",
+    "action": "",
+    "pretty": false,
+    "x": 650,
+    "y": 660,
+    "wires": [
+      [
+        "0e7ac1224101b9fb"
+      ]
+    ]
+  },
+  {
+    "id": "724ef469e4146d32",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "verifySignature",
+    "func": "const req = global.get('require');\nconst crypto = req(\"crypto\");\nconst { ec: EC } = req(\"elliptic\");\n\n// Initialize elliptic curve\nconst ec = new EC(\"secp256k1\");  // Using secp256k1 curve\n\n// Function to generate a timestamp-based key\nfunction generateTimeKey(timestamp) {\n    // Turn into seconds\n    timestamp = Math.floor(timestamp / 1000);\n    // Convert the timestamp to a buffer\n    const timeBuffer = Buffer.from(timestamp.toString(), \"utf-8\");\n\n    // Multiply the timestamp with the curve's generator point (R = T * g)\n    const generator = ec.g;  // Generator point of the curve\n    const R = generator.mul(timeBuffer);  // Multiply T (timestamp) with generator g\n\n    // Extract the x-coordinate from point R\n    const xCoord = R.getX().toString(\"hex\");  // Get the x-coordinate as a hex string\n\n    // Hash the x-coordinate using SHA-256 to create the time-based key (SIGKEY)\n    const hash = crypto.createHash(\"sha256\");\n    hash.update(xCoord);\n    const hx = hash.digest();\n\n    // Base64 encode the hash to get the SIGKEY\n    return hx.toString(\"base64\");\n}\n\n// Verify the message signature\nfunction verifySignature(message, encryptedSignature, iv, publicKey, timestamp, maxTimeDifference) {\n    // Step 1: Decrypt the signature using the time-based key\n    // Use integer division to convert the timestamp to seconds\n\n    for (let i = 0; i < maxTimeDifference; i++) {\n        try {\n            const key = generateTimeKey(timestamp - i * 1000);\n            const decipher = crypto.createDecipheriv(\"aes-256-cbc\", Buffer.from(key, \"base64\"), Buffer.from(iv, \"hex\"));\n            let decrypted = decipher.update(encryptedSignature, \"hex\", \"utf-8\");\n            decrypted += decipher.final(\"utf-8\");\n\n            // Step 2: Verify the signature\n            const verify = crypto.createVerify(\"sha256\");\n            verify.update(message);\n            verify.end();\n            return verify.verify(publicKey, decrypted, \"hex\");\n        } catch (e) {\n        }\n    }\n\n    return false;\n}\n\nconst publicKey = msg.payload.message.publicKey || msg.payload.publicKey;\n\nconst verified = verifySignature(JSON.stringify(msg.payload.message), msg.payload.encryptedSignature, msg.payload.iv, publicKey, Date.now(), 2);\nconst output = { res: msg.res, statusCode: msg.statusCode, payload: msg.payload.message };\nif (verified) {\n    return [output, null];\n}\noutput.statusCode = 401;\nreturn [null, output];\n",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 980,
+    "y": 280,
+    "wires": [
+      [
+        "0daa8796e684cf82",
+        "d5376218ec2ad293"
+      ],
+      [
+        "35ad5f4bfaee12a9"
+      ]
+    ]
+  },
+  {
+    "id": "d5376218ec2ad293",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "verifySignatureOut",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1250,
+    "y": 220,
+    "wires": []
+  },
+  {
+    "id": "122654766cabe60c",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "verifyPayloadOut",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1530,
+    "y": 220,
+    "wires": []
+  },
+  {
+    "id": "13f254b070347c37",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "register",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 960,
+    "y": 220,
+    "wires": []
+  },
+  {
+    "id": "35ad5f4bfaee12a9",
+    "type": "coap response",
+    "z": "aca3747d63338874",
+    "name": "401 Unauthorized",
+    "statusCode": "",
+    "contentFormat": "text/plain",
+    "x": 1250,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "06c1728c2e393bd2",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "verifySignature",
+    "func": "const req = global.get('require');\nconst crypto = req(\"crypto\");\nconst { ec: EC } = req(\"elliptic\");\n\n// Initialize elliptic curve\nconst ec = new EC(\"secp256k1\");  // Using secp256k1 curve\n\n// Function to generate a timestamp-based key\nfunction generateTimeKey(timestamp) {\n    // Turn into seconds\n    timestamp = Math.floor(timestamp / 1000);\n    // Convert the timestamp to a buffer\n    const timeBuffer = Buffer.from(timestamp.toString(), \"utf-8\");\n\n    // Multiply the timestamp with the curve's generator point (R = T * g)\n    const generator = ec.g;  // Generator point of the curve\n    const R = generator.mul(timeBuffer);  // Multiply T (timestamp) with generator g\n\n    // Extract the x-coordinate from point R\n    const xCoord = R.getX().toString(\"hex\");  // Get the x-coordinate as a hex string\n\n    // Hash the x-coordinate using SHA-256 to create the time-based key (SIGKEY)\n    const hash = crypto.createHash(\"sha256\");\n    hash.update(xCoord);\n    const hx = hash.digest();\n\n    // Base64 encode the hash to get the SIGKEY\n    return hx.toString(\"base64\");\n}\n\n// Verify the message signature\nfunction verifySignature(message, encryptedSignature, iv, publicKey, timestamp, maxTimeDifference) {\n    // Step 1: Decrypt the signature using the time-based key\n    // Use integer division to convert the timestamp to seconds\n\n    for (let i = 0; i < maxTimeDifference; i++) {\n        try {\n            const key = generateTimeKey(timestamp - i * 1000);\n            const decipher = crypto.createDecipheriv(\"aes-256-cbc\", Buffer.from(key, \"base64\"), Buffer.from(iv, \"hex\"));\n            let decrypted = decipher.update(encryptedSignature, \"hex\", \"utf-8\");\n            decrypted += decipher.final(\"utf-8\");\n\n            // Step 2: Verify the signature\n            const verify = crypto.createVerify(\"sha256\");\n            verify.update(message);\n            verify.end();\n            return verify.verify(publicKey, decrypted, \"hex\");\n        } catch (e) {\n        }\n    }\n\n    return false;\n}\n\nconst publicKey = msg.payload.message.publicKey || msg.payload.publicKey;\n\nconst verified = verifySignature(JSON.stringify(msg.payload.message), msg.payload.encryptedSignature, msg.payload.iv, publicKey, Date.now(), 2);\nconst output = {res: msg.res, statusCode: msg.statusCode, payload: msg.payload.message};\nif (verified) {\n    return [output, null];\n}\noutput.statusCode = 401;\nreturn [null, output];\n",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1720,
+    "y": 460,
+    "wires": [
+      [
+        "95c3af119a4b82eb"
+      ],
+      [
+        "ebf887ecfa768322"
+      ]
+    ]
+  },
+  {
+    "id": "95c3af119a4b82eb",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "updateItemsPayload",
+    "func": "const query = { trolleyId: msg.payload.trolleyId };\n\nconst update = {\n    $push: { items: msg.payload.itemId}\n};\n\nconst options = { upsert: true };\n\nmsg.payload = [query, update, options];\n\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1980,
+    "y": 460,
+    "wires": [
+      [
+        "4f9dedf264322006"
+      ]
+    ]
+  },
+  {
+    "id": "4f9dedf264322006",
+    "type": "mongodb4",
+    "z": "aca3747d63338874",
+    "clientNode": "6fb7779d657c483b",
+    "mode": "collection",
+    "collection": "trolleyItems",
+    "operation": "updateOne",
+    "output": "toArray",
+    "maxTimeMS": "0",
+    "handleDocId": false,
+    "name": "",
+    "x": 2190,
+    "y": 460,
+    "wires": [
+      [
+        "932ea25cc1b0d54d"
+      ]
+    ]
+  },
+  {
+    "id": "4185170a7823abb3",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "findPublicKeyPayload",
+    "func": "const query = {\n    trolleyId: msg.payload.message.trolleyId\n}\n\nmsg.originalPayload = msg.payload;\nmsg.payload = [query, null];\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 460,
+    "wires": [
+      [
+        "5e90c42df9aa36b1",
+        "cf56970971c4ba1c"
+      ]
+    ]
+  },
+  {
+    "id": "5e90c42df9aa36b1",
+    "type": "mongodb4",
+    "z": "aca3747d63338874",
+    "clientNode": "6fb7779d657c483b",
+    "mode": "collection",
+    "collection": "trolleyPublicKeys",
+    "operation": "findOne",
+    "output": "toArray",
+    "maxTimeMS": "0",
+    "handleDocId": false,
+    "name": "",
+    "x": 1220,
+    "y": 460,
+    "wires": [
+      [
+        "a51d5487d7a866e3",
+        "a3673398db357571"
+      ]
+    ]
+  },
+  {
+    "id": "a51d5487d7a866e3",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "setPublicKey",
+    "func": "if (msg.payload === null) {\n    msg.payload    = msg.originalPayload;\n    msg.statusCode = 401;\n    return [null, msg];\n}\n\nmsg.originalPayload.publicKey = msg.payload.publicKey;\nmsg.payload = msg.originalPayload;\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1470,
+    "y": 460,
+    "wires": [
+      [
+        "06c1728c2e393bd2",
+        "9dba54beb8fecb25"
+      ],
+      [
+        "ebf887ecfa768322"
+      ]
+    ]
+  },
+  {
+    "id": "ebf887ecfa768322",
+    "type": "coap response",
+    "z": "aca3747d63338874",
+    "name": "401 Not authorized",
+    "statusCode": "",
+    "contentFormat": "text/plain",
+    "x": 1970,
+    "y": 520,
+    "wires": []
+  },
+  {
+    "id": "932ea25cc1b0d54d",
+    "type": "coap response",
+    "z": "aca3747d63338874",
+    "name": "205 No content",
+    "statusCode": "",
+    "contentFormat": "text/plain",
+    "x": 2400,
+    "y": 460,
+    "wires": []
+  },
+  {
+    "id": "cf56970971c4ba1c",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "findPublicKeyOut",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1250,
+    "y": 400,
+    "wires": []
+  },
+  {
+    "id": "a3673398db357571",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "findOneOut",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1470,
+    "y": 400,
+    "wires": []
+  },
+  {
+    "id": "31d4dafa083e2402",
+    "type": "json",
+    "z": "aca3747d63338874",
+    "name": "",
+    "property": "payload.message",
+    "action": "",
+    "pretty": false,
+    "x": 790,
+    "y": 280,
+    "wires": [
+      [
+        "724ef469e4146d32",
+        "13f254b070347c37"
+      ]
+    ]
+  },
+  {
+    "id": "2b14167b6329c6a5",
+    "type": "json",
+    "z": "aca3747d63338874",
+    "name": "",
+    "property": "payload.message",
+    "action": "",
+    "pretty": false,
+    "x": 790,
+    "y": 460,
+    "wires": [
+      [
+        "4185170a7823abb3",
+        "365d60ec50b2aa58"
+      ]
+    ]
+  },
+  {
+    "id": "0e7ac1224101b9fb",
+    "type": "json",
+    "z": "aca3747d63338874",
+    "name": "",
+    "property": "payload.message",
+    "action": "",
+    "pretty": false,
+    "x": 790,
+    "y": 660,
+    "wires": [
+      [
+        "52062346f9ecf81e",
+        "93eba2f77303d536"
+      ]
+    ]
+  },
+  {
+    "id": "9dba54beb8fecb25",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "setPublicKeyOut",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1730,
+    "y": 400,
+    "wires": []
+  },
+  {
+    "id": "52062346f9ecf81e",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "checkout",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 960,
+    "y": 600,
+    "wires": []
+  },
+  {
+    "id": "93eba2f77303d536",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "findPublicKeyPayload",
+    "func": "const query = {\n    trolleyId: msg.payload.message.trolleyId\n}\n\nmsg.originalPayload = msg.payload;\nmsg.payload = [query, null];\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1000,
+    "y": 660,
+    "wires": [
+      [
+        "7d957f2c006364a8",
+        "3b91bf445e84e1d4"
+      ]
+    ]
+  },
+  {
+    "id": "7d957f2c006364a8",
+    "type": "mongodb4",
+    "z": "aca3747d63338874",
+    "clientNode": "6fb7779d657c483b",
+    "mode": "collection",
+    "collection": "trolleyPublicKeys",
+    "operation": "findOne",
+    "output": "toArray",
+    "maxTimeMS": "0",
+    "handleDocId": false,
+    "name": "",
+    "x": 1220,
+    "y": 660,
+    "wires": [
+      [
+        "0c96d66ecdc3e344",
+        "4b6976bd48927f90"
+      ]
+    ]
+  },
+  {
+    "id": "3b91bf445e84e1d4",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "findPublicKeyOut",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1250,
+    "y": 600,
+    "wires": []
+  },
+  {
+    "id": "0c96d66ecdc3e344",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "setPublicKey",
+    "func": "if (msg.payload === null) {\n    msg.payload    = msg.originalPayload;\n    msg.statusCode = 401;\n    return [null, msg];\n}\n\nmsg.originalPayload.publicKey = msg.payload.publicKey;\nmsg.payload = msg.originalPayload;\nreturn [msg, null];",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1470,
+    "y": 660,
+    "wires": [
+      [
+        "927f9d976679e4f4",
+        "d5c293fefcffe94d"
+      ],
+      [
+        "001cd535271a29e6"
+      ]
+    ]
+  },
+  {
+    "id": "4b6976bd48927f90",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "findOneOut",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1470,
+    "y": 600,
+    "wires": []
+  },
+  {
+    "id": "927f9d976679e4f4",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "setPublicKeyOut",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1730,
+    "y": 600,
+    "wires": []
+  },
+  {
+    "id": "001cd535271a29e6",
+    "type": "coap response",
+    "z": "aca3747d63338874",
+    "name": "401 Not authorized",
+    "statusCode": "",
+    "contentFormat": "text/plain",
+    "x": 1970,
+    "y": 720,
+    "wires": []
+  },
+  {
+    "id": "d5c293fefcffe94d",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "verifySignature",
+    "func": "const req = global.get('require');\nconst crypto = req(\"crypto\");\nconst { ec: EC } = req(\"elliptic\");\n\n// Initialize elliptic curve\nconst ec = new EC(\"secp256k1\");  // Using secp256k1 curve\n\n// Function to generate a timestamp-based key\nfunction generateTimeKey(timestamp) {\n    // Turn into seconds\n    timestamp = Math.floor(timestamp / 1000);\n    // Convert the timestamp to a buffer\n    const timeBuffer = Buffer.from(timestamp.toString(), \"utf-8\");\n\n    // Multiply the timestamp with the curve's generator point (R = T * g)\n    const generator = ec.g;  // Generator point of the curve\n    const R = generator.mul(timeBuffer);  // Multiply T (timestamp) with generator g\n\n    // Extract the x-coordinate from point R\n    const xCoord = R.getX().toString(\"hex\");  // Get the x-coordinate as a hex string\n\n    // Hash the x-coordinate using SHA-256 to create the time-based key (SIGKEY)\n    const hash = crypto.createHash(\"sha256\");\n    hash.update(xCoord);\n    const hx = hash.digest();\n\n    // Base64 encode the hash to get the SIGKEY\n    return hx.toString(\"base64\");\n}\n\n// Verify the message signature\nfunction verifySignature(message, encryptedSignature, iv, publicKey, timestamp, maxTimeDifference) {\n    // Step 1: Decrypt the signature using the time-based key\n    // Use integer division to convert the timestamp to seconds\n\n    for (let i = 0; i < maxTimeDifference; i++) {\n        try {\n            const key = generateTimeKey(timestamp - i * 1000);\n            const decipher = crypto.createDecipheriv(\"aes-256-cbc\", Buffer.from(key, \"base64\"), Buffer.from(iv, \"hex\"));\n            let decrypted = decipher.update(encryptedSignature, \"hex\", \"utf-8\");\n            decrypted += decipher.final(\"utf-8\");\n\n            // Step 2: Verify the signature\n            const verify = crypto.createVerify(\"sha256\");\n            verify.update(message);\n            verify.end();\n            return verify.verify(publicKey, decrypted, \"hex\");\n        } catch (e) {\n        }\n    }\n\n    return false;\n}\n\nconst publicKey = msg.payload.message.publicKey || msg.payload.publicKey;\n\nconst verified = verifySignature(JSON.stringify(msg.payload.message), msg.payload.encryptedSignature, msg.payload.iv, publicKey, Date.now(), 2);\nconst output = {res: msg.res, statusCode: msg.statusCode, payload: msg.payload.message};\nif (verified) {\n    return [output, null];\n}\noutput.statusCode = 401;\nreturn [null, output];\n",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1720,
+    "y": 660,
+    "wires": [
+      [
+        "18201b6249418cd7",
+        "f1ef58f2b82bd02d"
+      ],
+      [
+        "001cd535271a29e6"
+      ]
+    ]
+  },
+  {
+    "id": "18201b6249418cd7",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "getItemsPayload",
+    "func": "const query = { trolleyId: msg.payload.trolleyId };\n\nmsg.originalPayload = msg.payload;\nmsg.payload = [query, null];\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1970,
+    "y": 660,
+    "wires": [
+      [
+        "b408ccc5d49a78a2"
+      ]
+    ]
+  },
+  {
+    "id": "b408ccc5d49a78a2",
+    "type": "mongodb4",
+    "z": "aca3747d63338874",
+    "clientNode": "6fb7779d657c483b",
+    "mode": "collection",
+    "collection": "trolleyItems",
+    "operation": "findOne",
+    "output": "toArray",
+    "maxTimeMS": "0",
+    "handleDocId": false,
+    "name": "",
+    "x": 2180,
+    "y": 660,
+    "wires": [
+      [
+        "3a32b848b599a1de",
+        "7080f9a7c88d4a40",
+        "71ab66be80b1e6b2"
+      ]
+    ]
+  },
+  {
+    "id": "3a32b848b599a1de",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "findOneOut",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 2370,
+    "y": 600,
+    "wires": []
+  },
+  {
+    "id": "b3aa49b99af67328",
+    "type": "http request",
+    "z": "aca3747d63338874",
+    "name": "POST checkout to Cloud",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "body",
+    "url": "http://34.203.203.24/api/sales/checkout",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 2690,
+    "y": 660,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "7080f9a7c88d4a40",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "createCheckoutRequest",
+    "func": "let newPayload = {}\n\nif (msg.payload === null) {\n    newPayload.items = [];\n}\nelse {\n    newPayload.items = msg.payload.items;\n}\n\nnewPayload.trolleyId = msg.payload.trolleyId;\n\nmsg.payload = newPayload;\nreturn msg;\n\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 2410,
+    "y": 660,
+    "wires": [
+      [
+        "14acfebe0a8fa261",
+        "b3aa49b99af67328"
+      ]
+    ]
+  },
+  {
+    "id": "14acfebe0a8fa261",
+    "type": "debug",
+    "z": "aca3747d63338874",
+    "name": "createCheckoutRequest",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 2690,
+    "y": 600,
+    "wires": []
+  },
+  {
+    "id": "dc963135d896b939",
+    "type": "mongodb4",
+    "z": "aca3747d63338874",
+    "clientNode": "6fb7779d657c483b",
+    "mode": "collection",
+    "collection": "trolleyItems",
+    "operation": "deleteOne",
+    "output": "toArray",
+    "maxTimeMS": "0",
+    "handleDocId": false,
+    "name": "",
+    "x": 2590,
+    "y": 740,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "71ab66be80b1e6b2",
+    "type": "function",
+    "z": "aca3747d63338874",
+    "name": "deleteItemsPayload",
+    "func": "const query = { trolleyId: msg.originalPayload.trolleyId };\n\nmsg.payload = [query, null];\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 2390,
+    "y": 740,
+    "wires": [
+      [
+        "dc963135d896b939"
+      ]
+    ]
+  },
+  {
+    "id": "c6707cd9cca84ba5",
+    "type": "coap-server",
+    "name": "CoAP",
+    "port": "5683",
+    "ipv6": false
+  },
+  {
+    "id": "6fb7779d657c483b",
+    "type": "mongodb4-client",
+    "name": "MongoDB Atlas",
+    "username": "${MONGO_USERNAME}",
+    "password": "${MONGO_PASSWORD}",
+    "credentials": {
+      "username": "${MONGO_USERNAME}",
+      "password": "${MONGO_PASSWORD}"
+    },
+    "protocol": "${MONGO_PROTOCOL}",
+    "hostname": "${MONGO_URI}",
+    "port": "${MONGO_PORT}",
+    "dbName": "sit314",
+    "appName": "",
+    "authSource": "",
+    "authMechanism": "DEFAULT",
+    "tls": false,
+    "tlsCAFile": "",
+    "tlsCertificateKeyFile": "",
+    "tlsInsecure": false,
+    "connectTimeoutMS": "30000",
+    "socketTimeoutMS": "0",
+    "minPoolSize": "0",
+    "maxPoolSize": "100",
+    "maxIdleTimeMS": "0",
+    "uri": "",
+    "advanced": "{}",
+    "uriTabActive": "tab-uri-simple"
+  }
+]
